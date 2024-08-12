@@ -1,0 +1,70 @@
+   const recipes = await RecipeModel.aggregate([
+      {
+        $lookup: {
+          from: "users",
+          localField: "ownerId",
+          foreignField: "_id",
+          as: "owner",
+        },
+      },
+      {
+        $lookup: {
+          from: "likes",
+          let: { recipeId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$recipeId", "$recipeId"] },
+                    {
+                      $eq: ["$ownerId", "66ab4b96bb52a81b1966707d"],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "likeStatus",
+        },
+      },
+      {
+        $addFields: {
+          //  count likes
+          likes: {
+            $size: "$likes",
+          },
+
+          isLiked: {
+            $cond: {
+              if: { $gt: [{ $size: "$likeStatus" }, 0] },
+              then: { $arrayElemAt: ["$likeStatus.status", 0] },
+              else: null,
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          recipeId: 1,
+          name: 1,
+          url: 1,
+          ingredients: 1,
+          instructions: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          meal: 1,
+          tags: 1,
+          images: 1,
+          likes: 1,
+          likeStatus: 1,
+          isLiked: 1,
+          "owner._id": 1,
+          "owner.userId": 1,
+          "owner.username": 1,
+          "owner.url": 1,
+          "owner.avatarUrl": 1,
+        },
+      },
+    ]);
