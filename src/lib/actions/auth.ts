@@ -8,7 +8,7 @@ import { redirect } from "next/navigation";
 import { lucia, validateRequest } from "../auth/auth";
 
 import { LogoutResponse } from "@/types";
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath } from "next/cache";
 
 async function createGoogleAuthorizationURL() {
   const state = generateState();
@@ -74,7 +74,6 @@ export async function logout(): Promise<LogoutResponse> {
     if (lucia) {
       cookieHeader.delete(lucia.sessionCookieName);
     }
-
 
     //  reload page
     revalidatePath("/", "layout");

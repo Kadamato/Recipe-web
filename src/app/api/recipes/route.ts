@@ -71,6 +71,8 @@ export async function POST(req: Request) {
 
   const urls: string[] = [];
 
+  console.log(formData);
+
   const recipeValidate = recipeSchema.safeParse({
     recipeName,
     ingredients,
