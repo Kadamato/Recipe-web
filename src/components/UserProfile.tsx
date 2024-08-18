@@ -57,7 +57,7 @@ export default function UserProfile({
         unoptimized={true}
       />
 
-      <div className="flex items-center text-[22px] font-semibold mt-3 ">
+      <div className="flex flex-col lg:flex-row items-center text-[22px] font-semibold mt-3 ">
         <div>{profile?.username}</div>
 
         {profile?.isOwner ? (
@@ -66,7 +66,7 @@ export default function UserProfile({
           <Button
             className={`rounded-full ${
               isFollowing ? "bg-zinc-100 text-black" : "bg-black text-white "
-            }  ml-12 h-9 font-semibold`}
+            }  lg:ml-12 lg:mt-0 mt-3 h-9 font-semibold`}
             onClick={handleFollow}
           >
             {isFollowing ? "Unfollow" : "Follow"}
