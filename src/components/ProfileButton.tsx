@@ -63,9 +63,6 @@ export default function ProfileButton({
         <DropdownItem key="favorite" textValue="favorite">
           <Link href="/favorite">Favorite</Link>
         </DropdownItem>
-        <DropdownItem key="setting" textValue="setting">
-          <Link href="/setting/profile">Setting</Link>
-        </DropdownItem>
         <DropdownItem key="logout" color="danger" textValue="logout">
           <button
             type="submit"
