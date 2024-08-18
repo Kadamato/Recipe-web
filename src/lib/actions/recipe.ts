@@ -140,7 +140,10 @@ export async function getRecipeList(): Promise<RecipeResponse> {
 
   try {
     if (!user) {
-      const recipes = (await getAllRecipesForGuest()) as Recipe[];
+      const recipes = (await getAllRecipesForGuest(
+        startIndex,
+        limit
+      )) as Recipe[];
       return {
         data: recipes,
         error: null,

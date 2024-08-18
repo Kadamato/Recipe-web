@@ -35,7 +35,10 @@ export async function GET(req: Request) {
 
   try {
     if (!user) {
-      const recipes = (await getAllRecipesForGuest()) as Recipe[];
+      const recipes = (await getAllRecipesForGuest(
+        startIndex,
+        limit
+      )) as Recipe[];
       return Response.json(recipes, {
         status: 200,
       });
@@ -70,8 +73,6 @@ export async function POST(req: Request) {
   const meal = formData.getAll("meal") as string[];
 
   const urls: string[] = [];
-
-  console.log(formData);
 
   const recipeValidate = recipeSchema.safeParse({
     recipeName,

@@ -2,9 +2,10 @@ import RecipeModel from "@/models/Recipe";
 
 import type { Recipe } from "@/types";
 
-export default async function getAllRecipesForGuest(): Promise<
-  Recipe[] | null
-> {
+export default async function getAllRecipesForGuest(
+  startIndex: number,
+  limit: number
+): Promise<Recipe[] | null> {
   try {
     const recipes = await RecipeModel.aggregate([
       {
@@ -62,7 +63,10 @@ export default async function getAllRecipesForGuest(): Promise<
         },
       },
       {
-        $limit: 30,
+        $skip: startIndex,
+      },
+      {
+        $limit: limit,
       },
     ]);
 
