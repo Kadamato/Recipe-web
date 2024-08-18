@@ -66,7 +66,7 @@ export default function UserProfile({
           <Button
             className={`rounded-full ${
               isFollowing ? "bg-zinc-100 text-black" : "bg-black text-white "
-            }  lg:ml-12 lg:mt-0 mt-3 h-9 font-semibold`}
+            }  lg:ml-2 lg:mt-0 mt-3 h-9 font-semibold`}
             onClick={handleFollow}
           >
             {isFollowing ? "Unfollow" : "Follow"}
