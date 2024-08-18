@@ -41,10 +41,14 @@ export type Recipe = {
   ingredients?: string[];
   instructions?: string[];
   meal?: string[];
-  comments?: string[];
+  comments?: Comment[];
   likes?: number;
+  comment?: number;
   images?: (string | File)[];
   isLiked?: boolean;
+  isOwner?: boolean;
+  isSaved?: boolean;
+  saves?: Types.ObjectId[];
   createdAt?: Date;
   updatedAt?: Date;
 };
@@ -54,6 +58,24 @@ export type Like = {
   recipeId?: string;
   ownerId?: string;
   status?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+};
+
+export type Likes = {
+  likes: number;
+};
+
+export type Comment = {
+  _id?: string;
+  recipeId?: string;
+  ownerId?: string;
+  messageId?: string;
+  username?: string;
+  url?: string; // username url
+  message?: string;
+  isOwner?: boolean;
+  avatarUrl?: string;
   createdAt?: Date;
   updatedAt?: Date;
 };
@@ -88,4 +110,35 @@ export type UserResponse = {
 export type UsersResponse = {
   data: User[] | null;
   error: any;
+};
+
+export type RecipeDetailResponse = {
+  data: Recipe[] | null;
+  error: any;
+};
+
+export type CommentResponse = {
+  data: Comment | null;
+  error: any;
+};
+
+export type CommentsResponse = {
+  data: Comment[] | null;
+  error: any;
+};
+
+export type RecipeSearchResponse = {
+  _id?: string;
+  name?: string;
+  url?: string;
+  createdAt?: Date;
+  owner?: User[] | undefined;
+  likes?: number;
+};
+
+export type FavoriteRecipe = {
+  _id?: string;
+  name?: string;
+  images?: string[];
+  url?: string;
 };

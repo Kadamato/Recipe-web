@@ -24,11 +24,8 @@ export default async function Header() {
               className="h-[100px]"
             />
           </Link>
-          <nav className="pl-5  lg:pl-10  text[16px]">
-            <Link href="/rank">Rank</Link>
-          </nav>
         </div>
-        <div className="lg:flex items-center hidden sm:flex">
+        <div className="flex items-center pl-3">
           <SearchForm />
 
           <div className="ml-5">

@@ -44,6 +44,12 @@ const recipeSchema = new Schema(
       type: [Schema.Types.ObjectId],
       ref: "Like",
     },
+    saves: {
+      type: [Schema.Types.ObjectId],
+      ref: "User",
+      default: [],
+    },
+
     images: {
       type: [String],
       required: true,

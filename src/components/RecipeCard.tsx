@@ -1,7 +1,8 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { Card } from "@nextui-org/card";
 import { CardHeader } from "@nextui-org/card";
@@ -14,24 +15,18 @@ import { DropdownMenu } from "@nextui-org/dropdown";
 import { DropdownItem } from "@nextui-org/dropdown";
 
 import type { Recipe, User } from "@/types";
-import { likeRecipe } from "@/lib/actions/recipe";
 import { useEditForm } from "@/context/EditRecipeProvider";
+import useSWR from "swr";
+import useSWRMutation from "swr/mutation";
+import useLikeRecipe from "@/hooks/useLikeRecipe";
+import useSaveRecipe from "@/hooks/useSaveRecipe";
+import useDeleteRecipe from "@/hooks/useDeleteRecipe";
+import { toast } from "react-toastify";
+import { formatTime } from "@/lib/helper/formatTime";
 
-type LikeStatus = {
-  isLiked: boolean;
-  likes: number;
-};
-
-export default function RecipeCard({
-  recipe,
-  ownerId,
-}: {
-  recipe: Recipe;
-  ownerId: string;
-  user?: User;
-}) {
+export default function RecipeCard({ recipe }: { recipe: Recipe }) {
+  const router = useRouter();
   const owner = recipe.owner && (recipe?.owner[0] as User);
-  const isOwner: boolean = ownerId === owner?._id;
   const items = [
     {
       key: "edit",
@@ -47,40 +42,59 @@ export default function RecipeCard({
     },
   ];
 
-  const [like, setLike] = useState<LikeStatus>({
-    isLiked: recipe.isLiked || false,
-    likes: recipe.likes || 0,
-  });
+  const [likes, setLikes] = useState<number>(recipe?.likes || 0);
+
+  const [isLiked, setIsLiked] = useState<boolean>(recipe?.isLiked || false);
+
+  const [isSaved, setIsSaved] = useState<boolean>(recipe?.isSaved || false);
 
   const { handleEditRecipe } = useEditForm();
 
+  const { likeRecipe, isLiking } = useLikeRecipe(recipe?._id as string);
+  const { saveRecipe, saveError, isSaving } = useSaveRecipe(
+    recipe?._id as string
+  );
+  const { deleteRecipe } = useDeleteRecipe(recipe?._id as string);
+
   const handleLike = async () => {
-    try {
-      setLike((prev: LikeStatus) => ({
-        ...prev,
-        likes: prev.likes + (prev.isLiked ? -1 : 1),
-        isLiked: !prev.isLiked,
-      }));
-      const response = await likeRecipe(recipe?._id?.toString() || "");
-      if (response?.error) {
-        console.error("Error liking recipe", response.error);
-        return;
-      }
-    } catch (error) {
-      console.error("Error liking recipe", error);
-    }
+    setIsLiked((prev) => !prev);
+    setLikes((prev) => (isLiked ? prev - 1 : prev + 1));
+    const resp = await likeRecipe();
+    if (resp?.error) return router.push("/signin");
   };
 
+  const handleSaved = async () => {
+    if (isSaving) return;
+    const resp = await saveRecipe();
+    if (!resp) console.log(resp);
+    setIsSaved((prev) => !prev);
+  };
+
+  const handleDeleteRecipe = async () => {
+    const resp = await deleteRecipe();
+
+    if (!resp) toast.error("Delete error");
+
+    toast.success(`${"Recipe deleted"}`);
+
+    //  reload
+    window.location.reload();
+  };
   return (
     <Card className="w-[100%] max-w-[555px] mt-4">
       <CardHeader className="justify-between pt-4">
         <div className="flex gap-4">
           <Avatar radius="full" size="md" src={owner?.avatarUrl} />
           <div className="flex flex-col gap-1 items-start justify-center">
-            <h4 className="text-small font-semibold leading-none text-default-600">
+            <Link
+              href={owner?.url || ""}
+              className="text-small font-semibold leading-none text-default-600"
+            >
               {owner?.username}
-            </h4>
-            <h5 className="text-small tracking-tight text-default-400">3h</h5>
+            </Link>
+            <h5 className="text-small tracking-tight text-default-400">
+              {formatTime(recipe?.createdAt || new Date())}
+            </h5>
           </div>
         </div>
         <div className="flex items-center">
@@ -98,7 +112,8 @@ export default function RecipeCard({
               {items
                 .filter(
                   (item) =>
-                    isOwner || (item.key !== "edit" && item.key !== "delete")
+                    recipe?.isOwner ||
+                    (item.key !== "edit" && item.key !== "delete")
                 )
                 .map((item) => (
                   <DropdownItem
@@ -110,10 +125,16 @@ export default function RecipeCard({
                         ? () => {
                             handleEditRecipe(recipe);
                           }
-                        : undefined
+                        : item.key === "save"
+                        ? handleSaved
+                        : handleDeleteRecipe
                     }
                   >
-                    {item.label}
+                    {item.key === "save"
+                      ? isSaved
+                        ? "Unsave"
+                        : "Save"
+                      : item.label}
                   </DropdownItem>
                 ))}
             </DropdownMenu>
@@ -146,7 +167,7 @@ export default function RecipeCard({
             # {tag}
           </div>
         ))}
-        <div className="h-[360px] mt-4 ">
+        <Link href={recipe?.url || ""} className="h-[360px] mt-4 ">
           {recipe?.images?.map((image, index) => (
             <Image
               src={image?.toString() ?? ""}
@@ -159,12 +180,12 @@ export default function RecipeCard({
               unoptimized={true}
             />
           ))}
-        </div>
+        </Link>
       </CardBody>
       <CardFooter className="gap-4 text-[14px]">
         <div className="flex items-center">
           <button onClick={handleLike}>
-            {like?.isLiked ? (
+            {isLiked ? (
               <Image
                 src="/favorite-fill.svg"
                 alt="favorite"
@@ -183,7 +204,7 @@ export default function RecipeCard({
             )}
           </button>
 
-          <div>{like?.likes}</div>
+          <div>{likes}</div>
         </div>
 
         <Link href={recipe?.url as string} className="flex items-center">
@@ -194,7 +215,7 @@ export default function RecipeCard({
             height={21}
             className="cursor-pointer mr-2"
           />
-          <div>50</div>
+          <div>{recipe.comment || 0}</div>
         </Link>
 
         <div className="flex items-center">

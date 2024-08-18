@@ -11,6 +11,8 @@ import type { Recipe } from "@/types";
 
 import { updateRecipe } from "@/lib/actions/recipe";
 
+import { toast } from "react-toastify";
+
 const EditRecipeContext = createContext({
   openEditForm: false,
   handleOpenEditRecipeForm: () => {},
@@ -190,7 +192,7 @@ export default function EditRecipeProvider({
       (recipe.meal ?? []).length < 1 ||
       (recipe.images ?? []).length < 1
     )
-      return;
+      return toast.error("Please fill all fields");
 
     const formData = new FormData();
     formData.append("recipeName", recipeName);
@@ -204,19 +206,37 @@ export default function EditRecipeProvider({
     (recipe.tags ?? []).forEach((tag) => formData.append("tag", tag));
     (recipe.meal ?? []).forEach((meal) => formData.append("meal", meal));
 
-    startTransition(async () => {
-      const resp = await updateRecipe(
-        recipe && recipe._id ? recipe._id.toString() : "",
-        formData
-      );
+    // startTransition(async () => {
+    //   const resp = await updateRecipe(
+    //     recipe && recipe._id ? recipe._id.toString() : "",
+    //     formData
+    //   );
 
-      if (resp?.error) {
-        console.log(resp?.error);
-        return;
-      }
+    //   if (resp?.error) {
+    //     console.log(resp?.error);
+    //     return;
+    //   }
 
-      handleCloseEditRecipeForm();
+    //   handleCloseEditRecipeForm();
+    // });
+
+    const resp = await fetch(`/api/recipes/${recipe._id}/update`, {
+      method: "PUT",
+      body: formData,
     });
+    if (!resp.ok) {
+      const data = await resp.json();
+      const error = data.error;
+      const errorImage = error.images;
+      errorImage
+        ? toast.error(`${errorImage?.[0]}`)
+        : toast.error(`Delete failed`);
+    } else {
+      toast.success("Recipe updated successfully");
+      window.location.reload();
+    }
+
+    handleCloseEditRecipeForm();
   };
 
   const handleOpenEditRecipeForm = () => setOpenEditForm(true);

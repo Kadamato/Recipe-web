@@ -7,10 +7,13 @@ import {
   useRef,
   useCallback,
   useTransition,
+  FormEvent,
 } from "react";
 import type { Recipe } from "@/types";
 
 import { createNewRecipe } from "@/lib/actions/recipe";
+
+import { toast } from "react-toastify";
 
 const RecipeFormContext = createContext({
   isOpen: false,
@@ -37,7 +40,7 @@ const RecipeFormContext = createContext({
   handleAddTag: () => {},
   handleDeleteTag: (index: number) => {},
   handleChangeMeal: (e: React.ChangeEvent<HTMLInputElement>) => {},
-  handleCreateRecipe: (form: FormData) => {},
+  handleCreateRecipe: (e: FormEvent) => {},
 });
 
 export default function RecipeFormProvider({
@@ -181,7 +184,8 @@ export default function RecipeFormProvider({
     }
   };
 
-  const handleCreateRecipe = async (form: FormData) => {
+  const handleCreateRecipe = async (e: FormEvent) => {
+    e.preventDefault();
     const recipeName = recipeNameRef.current?.value;
 
     if (
@@ -191,7 +195,7 @@ export default function RecipeFormProvider({
       (recipe.meal ?? []).length < 1 ||
       (recipe.images ?? []).length < 1
     )
-      return;
+      return toast.error("Please fill all fields");
 
     const formData = new FormData();
     formData.append("recipeName", recipeName);
@@ -205,10 +209,36 @@ export default function RecipeFormProvider({
     (recipe.tags ?? []).forEach((tag) => formData.append("tag", tag));
     (recipe.meal ?? []).forEach((meal) => formData.append("meal", meal));
 
-    startTransition(async () => {
-      const resp = await createNewRecipe(formData);
-      handleCloseRecipeForm();
+    // startTransition(async () => {
+    //   const resp = await createNewRecipe(formData);
+
+    //   console.log("recipes", resp);
+
+    //   // if (resp.error) {
+    //   //   toast.error(resp.error);
+    //   //   return;
+    //   // }
+
+    //   handleCloseRecipeForm();
+    // });
+
+    const resp = await fetch("/api/recipes", {
+      method: "POST",
+      body: formData,
     });
+    // const data = await resp.json();
+    if (!resp.ok) {
+      const data = await resp.json();
+      const error = data.error;
+      const errorImage = error.images;
+      errorImage ? toast.error(`${errorImage?.[0]}`) : toast.error(`${error}`);
+    } else {
+      toast.success("Recipe created successfully");
+      window.location.reload();
+    }
+    handleCloseRecipeForm();
+
+    //  reload
   };
 
   const handleOpenRecipeForm = () => onOpen();

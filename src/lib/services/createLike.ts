@@ -1,7 +1,6 @@
 import LikeModel from "@/models/Like";
 
 import type { Like } from "@/types";
-import { ObjectId } from "mongoose";
 
 export default async function createLike(like: Like): Promise<Like | null> {
   try {

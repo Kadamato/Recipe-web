@@ -6,9 +6,12 @@ export default async function setRecipesByRecipeId(
 ) {
   try {
     const user = await User.findById(userId);
-    if (user) {
-      user.recipes.push(recipeId);
-      await user.save();
-    }
-  } catch (error) {}
+    if (!user) return null;
+    user.recipes.push(recipeId);
+    await user.save();
+
+    return user;
+  } catch (error) {
+    return null;
+  }
 }

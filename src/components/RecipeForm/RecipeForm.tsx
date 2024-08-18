@@ -59,7 +59,7 @@ export default function RecipeForm() {
       <ModalContent>
         <ModalHeader>Create a new recipe</ModalHeader>
         <ModalBody className="pb-5 overflow-y-scroll text-[15px]">
-          <form className="flex flex-col" action={handleCreateRecipe}>
+          <form className="flex flex-col" onSubmit={handleCreateRecipe}>
             <div className="rounded-lg border-1  h-[250px] flex items-center justify-center">
               <Button
                 className={`bg-black text-white font-medium ${

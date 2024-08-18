@@ -1,10 +1,13 @@
 import RecipeModel from "@/models/Recipe";
 import UserModel from "@/models/User";
 import type { Recipe } from "@/types";
+import mongoose from "mongoose";
 
 export default async function findRecipesForUserById(
   userId: string,
-  ownerId: string
+  ownerId: string,
+  startIndex: number,
+  limit: number
 ): Promise<Recipe[] | null | boolean> {
   try {
     const user = await UserModel.findOne({ userId });
@@ -59,6 +62,19 @@ export default async function findRecipesForUserById(
               cond: { $eq: ["$$like.status", true] },
             },
           },
+          // count comment
+          comment: {
+            $size: "$comments",
+          },
+          isOwner: {
+            $cond: {
+              if: {
+                $eq: ["$ownerId", new mongoose.Types.ObjectId(ownerId)],
+              },
+              then: true,
+              else: false,
+            },
+          },
         },
       },
       {
@@ -81,11 +97,16 @@ export default async function findRecipesForUserById(
         },
       },
       {
-        $limit: 30,
+        $skip: startIndex,
+      },
+      {
+        $limit: limit,
       },
     ]);
 
     if (!recipes) return false;
+
+    console.log(recipes);
 
     return recipes;
   } catch (error) {

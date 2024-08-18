@@ -3,7 +3,8 @@ import findRecipesForGuestById from "@/lib/services/findRecipesForGuestById";
 
 import findRecipesForUserById from "@/lib/services/findRecipesForUserById";
 import { Recipe } from "@/types";
-import { NextRequest } from "next/server";
+
+import getRecordLimit from "@/lib/helper/getRecordLimit";
 
 type Response = {
   recipes: Recipe[] | null;
@@ -18,6 +19,8 @@ export async function GET(
 
   const ownerId = user?.id ?? "";
   const userId = params.userId;
+
+  const { startIndex, limit } = getRecordLimit(request.url);
 
   if (!ownerId) {
     try {
@@ -46,7 +49,12 @@ export async function GET(
   }
 
   try {
-    const recipes = (await findRecipesForUserById(userId, ownerId)) as Recipe[];
+    const recipes = (await findRecipesForUserById(
+      userId,
+      ownerId,
+      startIndex,
+      limit
+    )) as Recipe[];
 
     if (!recipes)
       return Response.json(

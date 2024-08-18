@@ -5,6 +5,7 @@ import { Button } from "@nextui-org/react";
 import { useState } from "react";
 
 import useSWRMutation from "swr/mutation";
+import { useRouter } from "next/navigation";
 
 const fetcher = async (url: string) => {
   const res = await fetch(url, {
@@ -16,7 +17,15 @@ const fetcher = async (url: string) => {
   return res.json();
 };
 
-export default function UserProfile({ user: profile }: { user: User }) {
+export default function UserProfile({
+  user: profile,
+  ownerId,
+}: {
+  user: User;
+  ownerId: string;
+}) {
+  const router = useRouter();
+
   const [isFollowing, setIsFollowing] = useState<boolean>(
     profile?.isFollowing ?? false
   );
@@ -27,12 +36,13 @@ export default function UserProfile({ user: profile }: { user: User }) {
   );
 
   const handleFollow = async () => {
+    if (!ownerId) return router.push("/signin");
     setIsFollowing(!isFollowing);
     await trigger();
   };
 
   return (
-    <div className="lg:px-12 pt-5 w-[30%]">
+    <div className="pb-5 lg:px-12 pt-5 lg:w-[30%] flex flex-col justify-center items-center ">
       <Image
         src={
           profile?.avatarUrl ||
@@ -74,10 +84,6 @@ export default function UserProfile({ user: profile }: { user: User }) {
         <div>
           <span className=" mr-1">{profile?.following}</span> Following
         </div>
-      </div>
-      <div className="mt-3">
-        <div>Bio</div>
-        <p>i am kadamato</p>
       </div>
     </div>
   );

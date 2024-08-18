@@ -14,6 +14,7 @@ import setRecipesByRecipeId from "../services/setRecipesByRecipeId";
 import { validateRequest } from "../auth/auth";
 import type {
   LikeResponse,
+  RecipeDetailResponse,
   RecipeResponse,
   User,
   UsersResponse,
@@ -28,6 +29,11 @@ import findLikeAndUpdateById from "../services/findLikeAndUpdateById";
 import findRecipeByName from "../services/findRecipeByName";
 import findUsersByName from "../services/findUserByName";
 import findRecipesForUserById from "../services/findRecipesForUserById";
+import findRecipeById from "../services/findRecipeById";
+import { error } from "console";
+import createComment from "../services/createComment";
+import findRecipesForGuestById from "../services/findRecipesForGuestById";
+import findRecipeForGuestById from "../services/findRecipeForGuestById";
 
 const recipeSchema = z.object({
   recipeName: z.string(),
@@ -44,7 +50,14 @@ const recipeSchema = z.object({
   ),
 });
 
-export async function createNewRecipe(formData: FormData): Promise<void> {
+type CreateRecipeResponse = {
+  data: string | null;
+  error: any;
+};
+
+export async function createNewRecipe(
+  formData: FormData
+): Promise<CreateRecipeResponse> {
   const recipeName = formData.get("recipeName") as string;
   const ingredients = formData.getAll("ingredient") as string[];
   const instructions = formData.getAll("instruction") as string[];
@@ -67,8 +80,10 @@ export async function createNewRecipe(formData: FormData): Promise<void> {
   });
 
   if (!recipeValidate.success) {
-    console.log(recipeValidate.error.flatten().fieldErrors);
-    return;
+    return {
+      data: null,
+      error: recipeValidate.error.flatten().fieldErrors,
+    };
   }
 
   try {
@@ -98,9 +113,16 @@ export async function createNewRecipe(formData: FormData): Promise<void> {
 
     await setRecipesByRecipeId(userId, id || "");
 
-    revalidatePath("/");
-  } catch (error) {
+    return {
+      data: "Recipe created successfully",
+      error: null,
+    };
+  } catch (error: any) {
     console.log(error);
+    return {
+      data: null,
+      error: error,
+    };
   }
 }
 
@@ -108,18 +130,34 @@ export async function deleteRecipe(recipeId: string): Promise<boolean> {
   return true;
 }
 
-export async function getRecipeList(): Promise<Recipe[] | RecipeResponse> {
+export async function getRecipeList(): Promise<RecipeResponse> {
   const user = (await validateRequest()) as User;
+
+  //  default
+
+  const startIndex = 0;
+  const limit = 45;
 
   try {
     if (!user) {
       const recipes = (await getAllRecipesForGuest()) as Recipe[];
-      return recipes;
+      return {
+        data: recipes,
+        error: null,
+      };
     }
 
-    const recipes = (await getAllRecipeForUser(String(user.id))) as Recipe[];
+    const userId = String(user.id);
+    const recipes = (await getAllRecipeForUser(
+      userId,
+      startIndex,
+      limit
+    )) as Recipe[];
 
-    return recipes;
+    return {
+      data: recipes,
+      error: null,
+    };
   } catch (error: any) {
     return {
       data: null,
@@ -259,8 +297,10 @@ export async function updateRecipe(
 export async function getRecipeByName(
   name: string
 ): Promise<Recipe | RecipeResponse> {
+  const startIndex = 0;
+  const limit = 10;
   try {
-    const recipe = (await findRecipeByName(name)) as Recipe;
+    const recipe = (await findRecipeByName(name, startIndex, limit)) as Recipe;
 
     if (!recipe)
       return {
@@ -278,8 +318,10 @@ export async function getRecipeByName(
 }
 
 export async function getUserByName(name: string): Promise<UsersResponse> {
+  const startIndex = 0;
+  const limit = 10;
   try {
-    const users = (await findUsersByName(name)) as User[];
+    const users = (await findUsersByName(name, startIndex, limit)) as User[];
 
     if (!users)
       return {
@@ -305,6 +347,10 @@ export async function getRecipesForUser(
   const user = await validateRequest();
   const ownerId = user?.id ?? "";
 
+  // default
+  const startIndex = 0;
+  const limit = 10;
+
   if (!user)
     return {
       data: null,
@@ -312,7 +358,12 @@ export async function getRecipesForUser(
     };
 
   try {
-    const recipes = (await findRecipesForUserById(userId, ownerId)) as Recipe[];
+    const recipes = (await findRecipesForUserById(
+      userId,
+      ownerId,
+      startIndex,
+      limit
+    )) as Recipe[];
 
     if (!recipes)
       return {
@@ -325,6 +376,84 @@ export async function getRecipesForUser(
       error: null,
     };
   } catch (error: any) {
+    return {
+      data: null,
+      error: error,
+    };
+  }
+}
+
+export async function getRecipeDetail(
+  recipeId: string
+): Promise<RecipeDetailResponse> {
+  const owner = await validateRequest();
+  const ownerId = owner?.id || "";
+
+  if (!owner) {
+    try {
+      const recipe = await findRecipeForGuestById(recipeId);
+
+      if (!recipe)
+        return {
+          data: null,
+          error: "Error finding recipe",
+        };
+
+      return {
+        data: recipe,
+        error: null,
+      };
+    } catch (error) {
+      return {
+        data: null,
+        error: error,
+      };
+    }
+  } else {
+    try {
+      const recipe = await findRecipeById(recipeId, ownerId);
+
+      if (!recipe)
+        return {
+          data: null,
+          error: "Error finding recipe",
+        };
+
+      return {
+        data: recipe,
+        error: null,
+      };
+    } catch (error) {
+      return {
+        data: null,
+        error: error,
+      };
+    }
+  }
+}
+
+export async function createNewComment(recipeId: string, message: string) {
+  const owner = await validateRequest();
+
+  if (!owner) return redirect("/signin");
+  try {
+    const newComment = await createComment({
+      ownerId: owner.id,
+      recipeId,
+      message,
+    });
+
+    if (!newComment)
+      return {
+        data: null,
+        error: "Error creating comment",
+      };
+
+    return {
+      data: newComment,
+      error: null,
+    };
+  } catch (error) {
     return {
       data: null,
       error: error,

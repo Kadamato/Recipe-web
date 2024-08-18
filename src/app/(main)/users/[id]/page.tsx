@@ -21,8 +21,8 @@ export default async function ProfilePage() {
   if (!user.data) return <div>{user.error}</div>;
 
   return (
-    <div className="flex mt-5">
-      <UserProfile user={user.data} />
+    <div className="px-2 flex flex-col items-center  mt-5 lg:flex lg:flex-row lg:items-start lg:justify-center">
+      <UserProfile user={user.data} ownerId={ownerId} />
       <OwnerRecipeList
         userId={userId || ""}
         ownerId={ownerId}

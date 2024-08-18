@@ -15,16 +15,19 @@ export default function SideBar({
   // const query = searchParams.get("q");
 
   return (
-    <div className="flex-col items-center pr-10 w-1/5  ">
-      <Tab onClick={onClick} currentTab={TAB_STATUS.TUTORIAL}>
-        Cook Tutorial
-      </Tab>
-      <Tab onClick={onClick} currentTab={TAB_STATUS.RECIPE}>
-        Recipes
-      </Tab>
-      <Tab onClick={onClick} currentTab={TAB_STATUS.USER}>
-        Users
-      </Tab>
+    <div>
+      <div className=" pr-10   flex ">
+        <Tab onClick={onClick} currentTab={TAB_STATUS.TUTORIAL}>
+          Cook Tutorial
+        </Tab>
+        <Tab onClick={onClick} currentTab={TAB_STATUS.RECIPE}>
+          Recipes
+        </Tab>
+        <Tab onClick={onClick} currentTab={TAB_STATUS.USER}>
+          Users
+        </Tab>
+      </div>
+      {/* <div className="w-1/5 h-full"></div> */}
     </div>
   );
 }
@@ -41,7 +44,7 @@ export function Tab({
   const [isPending, startTransition] = useTransition();
   return (
     <div
-      className=" pt-2 cursor-pointer block"
+      className=" pt-2 mr-5 cursor-pointer block"
       onClick={() =>
         startTransition(() => {
           if (currentTab === TAB_STATUS.TUTORIAL) onClick(TAB_STATUS.TUTORIAL);

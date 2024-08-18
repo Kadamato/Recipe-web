@@ -1,10 +1,26 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
-import UserCard from "./UserCard";
-import { getUserByName } from "@/lib/actions/recipe";
-import type { User, UsersResponse } from "@/types";
-import { Spinner } from "@nextui-org/react";
+import { useEffect, useState } from "react";
+import { TAB_STATUS } from "@/const";
+import { useInView } from "react-intersection-observer";
+import useSWRInfinite from "swr/infinite";
+import type { User } from "@/types";
+import UserSearchList from "./UserSearchList";
+
+const loadMoreFetcher = async (url: string) => {
+  try {
+    const resp = await fetch(url);
+
+    if (resp.ok) {
+      const data = await resp.json();
+      return data;
+    }
+
+    throw new Error("Error fetching data");
+  } catch (error) {
+    throw new Error(`Error fetching data: ${error}`);
+  }
+};
 
 export default function Users({
   query,
@@ -13,38 +29,47 @@ export default function Users({
   query: string;
   type: string;
 }) {
-  const [isPending, startTransition] = useTransition();
-  const [users, setUsers] = useState<User[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [userList, setUsers] = useState<User[]>([]);
+  const [pageIndex, setPageIndex] = useState(1);
+  const { ref, inView } = useInView();
+  const {
+    data: users,
+    size,
+    setSize,
+  } = useSWRInfinite(
+    (index) =>
+      `/api/search?q=${query}&type=${TAB_STATUS.RECIPE}&page=${
+        index + 1
+      }&limit=20`,
+    loadMoreFetcher
+  );
 
   useEffect(() => {
-    startTransition(async () => {
+    if (inView) {
+      if (users?.length === 0) return;
+      setPageIndex((prev) => prev + 1);
+      setSize(size + 1);
+    }
+  }, [inView, pageIndex, users, setSize, size]);
+
+  useEffect(() => {
+    (async () => {
       try {
-        const userList = (await getUserByName(query)) as UsersResponse;
-        if (userList?.error) return setError("Không tìm thấy kết quả nào");
-        setUsers((userList?.data ?? []) as User[]);
-      } catch (error) {
-        setError("Error occurred while fetching data");
+        const resp = await fetch(
+          `/api/search?q=${query}&type=${TAB_STATUS.USER}&page=${pageIndex}&limit=20`
+        );
+
+        if (!resp.ok) {
+          throw new Error("Error fetching data");
+        }
+        const data = await resp.json();
+        setUsers(data);
+      } catch (error: any) {
+        throw new Error(`Error fetching data: ${error}`);
       }
-    });
-  }, [query, type]);
+    })();
+  }, [query]);
+  // if (error) return <p>{error}</p>;
 
-  if (isPending) return <Spinner />;
-  if (error) return <p>{error}</p>;
-
-  return (
-    <div className="pr-10">
-      <h1 className="text-[16px] font-semibold pb-5 pt-2">
-        Tìm kiếm cho: {query}
-      </h1>
-
-      <div>
-        {users.length === 0 ? (
-          <p>Không tìm thấy kết quả nào</p>
-        ) : (
-          users.map((user) => <UserCard key={user._id} user={user} />)
-        )}
-      </div>
-    </div>
-  );
+  return <UserSearchList query={query} users={userList} ref={ref} />;
 }

@@ -1,12 +1,13 @@
 import RecipeModel from "@/models/Recipe";
+import mongoose from "mongoose";
 
-export default async function getAllRecipeForUser(ownerId: string) {
-  //  get recipes
-  //  info recipe
-  //  info user
-  //  info like - count like
-  //  status like
+import type { Recipe } from "@/types";
 
+export default async function getAllRecipeForUser(
+  ownerId: string,
+  startIndex: number,
+  limit: number
+) {
   try {
     const recipes = await RecipeModel.aggregate([
       {
@@ -26,6 +27,14 @@ export default async function getAllRecipeForUser(ownerId: string) {
         },
       },
       {
+        $lookup: {
+          from: "comments",
+          localField: "_id",
+          foreignField: "recipeId",
+          as: "comments",
+        },
+      },
+      {
         $project: {
           _id: 1,
           recipeId: 1,
@@ -38,6 +47,7 @@ export default async function getAllRecipeForUser(ownerId: string) {
           meal: 1,
           tags: 1,
           images: 1,
+          ownerId: 1,
           "owner._id": 1,
           "owner.userId": 1,
           "owner.username": 1,
@@ -50,9 +60,21 @@ export default async function getAllRecipeForUser(ownerId: string) {
               cond: { $eq: ["$$like.status", true] },
             },
           },
+          isOwner: {
+            $cond: {
+              if: {
+                $eq: ["$ownerId", new mongoose.Types.ObjectId(ownerId)],
+              },
+              then: true,
+              else: false,
+            },
+          },
+          isSaved: {
+            $in: [new mongoose.Types.ObjectId(ownerId), "$saves"],
+          },
+          comment: { $size: "$comments" },
         },
       },
-
       {
         $addFields: {
           likes: { $size: "$likesInfo" },
@@ -73,10 +95,12 @@ export default async function getAllRecipeForUser(ownerId: string) {
         },
       },
       {
-        $limit: 30,
+        $skip: startIndex,
+      },
+      {
+        $limit: limit,
       },
     ]);
-
     return recipes;
   } catch (error) {
     console.log(error);

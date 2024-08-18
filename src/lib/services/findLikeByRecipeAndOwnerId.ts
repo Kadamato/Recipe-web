@@ -6,8 +6,8 @@ export default async function findLikeByRecipeAndOwnerId(
 ): Promise<boolean | null | string> {
   try {
     const like = await LikeModel.findOne({ recipeId, ownerId });
-    if (like == null) return "NOT_FOUND";
-    return like.status;
+    if (!like) return null;
+    return like;
   } catch (error) {
     console.log(error);
     return null;

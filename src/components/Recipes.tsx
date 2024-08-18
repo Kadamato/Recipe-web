@@ -1,11 +1,26 @@
-"use client";
-import RecipeCardV2 from "./RecipeCardV2";
+import { useEffect, useState } from "react";
+import RecipeSearchList from "./RecipeSearchList";
+
+import { useInView } from "react-intersection-observer";
+import useSWRInfinite from "swr/infinite";
+import { TAB_STATUS } from "@/const";
 
 import type { Recipe } from "@/types";
-import { Spinner } from "@nextui-org/react";
-import useSWR from "swr";
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const loadMoreFetcher = async (url: string) => {
+  try {
+    const resp = await fetch(url);
+
+    if (resp.ok) {
+      const data = await resp.json();
+      return data;
+    }
+
+    throw new Error("Error fetching data");
+  } catch (error) {
+    throw new Error(`Error fetching data: ${error}`);
+  }
+};
 
 export default function Recipes({
   query,
@@ -14,29 +29,41 @@ export default function Recipes({
   query: string;
   type: string;
 }) {
-  //  design api endpoint for search recipes by query and type
-  const { data, error, isLoading } = useSWR<Recipe[]>(
-    `/api/search?q=${query}&type=${type}`,
-    fetcher
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [pageIndex, setPageIndex] = useState(1);
+  const { ref, inView } = useInView();
+  const { data, size, setSize } = useSWRInfinite(
+    (index) =>
+      `/api/search?q=${query}&type=${TAB_STATUS.RECIPE}&page=${
+        index + 1
+      }&limit=20`,
+    loadMoreFetcher
   );
 
-  if (isLoading) return <Spinner />;
-  if (error) return <p>Error: {error}</p>;
+  useEffect(() => {
+    if (inView) {
+      if (data && data.length > 0) {
+        setPageIndex((prev) => prev + 1);
+        setSize(size + 1);
+        setRecipes((prevRecipes) => [...prevRecipes, ...(data ?? [])]);
+      }
+    }
+  }, [inView, data, setSize, size]);
 
-  return (
-    <div className="pr-10">
-      <h1 className="text-[16px] font-semibold pb-2 pt-2">
-        Tìm kiếm cho: {query}
-      </h1>
-      <div>
-        {data?.length === 0 ? (
-          <p>Không tìm thấy kết quả nào</p>
-        ) : (
-          data?.map((recipe) => (
-            <RecipeCardV2 key={recipe._id?.toString()} recipe={recipe} />
-          ))
-        )}
-      </div>
-    </div>
-  );
+  useEffect(() => {
+    (async () => {
+      const resp = await fetch(
+        `/api/search?q=${query}&type=${TAB_STATUS.RECIPE}&page=1&limit=20`
+      );
+      const data = await resp.json();
+      setRecipes(data);
+    })();
+
+    //  cleanup
+    return () => {
+      setRecipes([]);
+    };
+  }, [query]);
+
+  return <RecipeSearchList recipes={recipes} query={query} ref={ref} />;
 }

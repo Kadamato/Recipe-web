@@ -61,7 +61,7 @@ export default function ProfileButton({
           <Link href={`${profile?.url}`}>My profile</Link>
         </DropdownItem>
         <DropdownItem key="favorite" textValue="favorite">
-          Favorite
+          <Link href="/favorite">Favorite</Link>
         </DropdownItem>
         <DropdownItem key="setting" textValue="setting">
           <Link href="/setting/profile">Setting</Link>
