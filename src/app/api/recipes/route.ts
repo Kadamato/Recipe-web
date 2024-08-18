@@ -1,4 +1,5 @@
 import { z } from "zod";
+import cloudinary from "@/lib/cloudinary";
 
 import { validateRequest } from "@/lib/auth/auth";
 import type { Recipe, User } from "@/types";
@@ -58,6 +59,12 @@ export async function GET(req: Request) {
     return Response.json({ error: error.message }, { status: 500 });
   }
 }
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 export async function POST(req: Request) {
   const owner = await validateRequest();
