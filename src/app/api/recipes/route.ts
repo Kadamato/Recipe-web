@@ -1,5 +1,5 @@
 import { z } from "zod";
-import cloudinary from "@/lib/cloudinary";
+import { v2 as cloudinary } from "cloudinary";
 
 import { validateRequest } from "@/lib/auth/auth";
 import type { Recipe, User } from "@/types";
