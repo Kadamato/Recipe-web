@@ -47,7 +47,7 @@ export default async function findCommentByRecipeId(
           avatarUrl: "$owner.avatarUrl",
           username: "$owner.username",
           url: "$owner.url",
-          updatedAt: 1,
+          createdAt: 1,
           isOwner: {
             $eq: ["$ownerId", ownerId],
           },
