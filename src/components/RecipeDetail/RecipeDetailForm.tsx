@@ -158,7 +158,9 @@ export default function RecipeDetailForm({
         <div className="font-semibold text-lg py-2">INSTRUCTIONS</div>
         <div>
           {recipe?.instructions?.map((instruction, i) => (
-            <div key={i}>{instruction}</div>
+            <div key={i}>
+              Step {index + 1}: {instruction}
+            </div>
           ))}
         </div>
         <div className="text-blue font-medium text-[14px] pt-2">
