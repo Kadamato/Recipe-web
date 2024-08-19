@@ -11,7 +11,7 @@ export default function FavoriteCard({
   recipe: FavoriteRecipe;
 }) {
   return (
-    <div className="lg:w-1/5 mr-3 relative min-w-[240px] mb-3 ">
+    <div className="lg:w-1/5 mr-3 relative min-w-[240px] mb-3">
       <Link href={recipe?.url || ""}>
         <Image
           src={recipe?.images?.[0] || ""}
